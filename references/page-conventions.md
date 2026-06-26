@@ -1,8 +1,10 @@
 # 页面规范
 
+本文件只提供页面模板、命名规则和链接格式。执行流程、Clippings 分支、URL 抓取失败策略和 ingest 成功标准以 SKILL.md 为准。
+
 ## 目录约定
 
-- `raw/articles/`：原始资料层。保存链接、访问日期、获取方式、原文或原始 Markdown 快照和处理状态。
+- `raw/articles/`：原始资料层。保存链接、访问日期、获取方式、完整原文或完整 Markdown 快照和处理状态。
 - `raw/assets/`：图片、附件、PDF 或网页下载资产。引用图片时优先使用本地附件。
 - `wiki/sources/`：单个来源的结构化总结。
 - `wiki/concepts/`：稳定概念页。
@@ -36,14 +38,14 @@ source: https://example.com
 
 ## 获取方式
 
-- 来源类型：URL / PDF / GitHub / 用户提供文本
+- 来源类型：URL / Obsidian Web Clipper / PDF / GitHub / 用户提供文本
 - 获取工具：
 - 访问日期：
-- 保存内容：原文 / 原始 Markdown 快照 / PDF 文本提取 / 用户提供文本
+- 保存内容：完整原文 / 完整 Markdown 快照 / PDF 文本提取 / 用户提供文本
 
 ## 原文
 
-在这里保存可获取的原文或原始 Markdown 快照。不要在 `raw/` 中混入长期总结；总结写入 `wiki/sources/`。
+在这里保存可获取的完整原文或完整 Markdown 快照。不要在 `raw/` 中混入长期总结；总结写入 `wiki/sources/`。
 
 ## 处理状态
 
@@ -51,7 +53,14 @@ source: https://example.com
 - 待处理：
 ```
 
-raw 页面创建后视为 source of truth。后续只能补充元数据、处理状态、脱敏说明或附件链接，不重写原文正文。
+raw 页面创建后视为 source of truth。后续只能补充元数据、处理状态或附件链接，不重写原文正文。
+
+URL 入库使用 defuddle 等工具生成 vault 外部临时文件时，由 `scripts/raw_ingest.py` 写入 raw：
+
+```bash
+defuddle parse <url> --md -o /tmp/knowledge-wiki-ingest/<slug>.md
+scripts/raw_ingest.py file --input /tmp/knowledge-wiki-ingest/<slug>.md --source <url> --vault knowledge-agent
+```
 
 更新已有页面前必须先读取当前内容，只改本轮需要维护的段落；不得用模板覆盖整页，避免丢失人工补充、历史上下文或无关内容。
 
@@ -80,6 +89,33 @@ status: active
 ## 性能与安全取舍
 
 ## 相关页面
+```
+
+## Area 页模板
+
+`wiki/areas/` 是长期主题入口，用于沉淀跨来源脉络，不保存单篇来源摘要。
+
+```markdown
+---
+title: 主题名
+tags:
+  - area
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+status: active
+---
+
+# 主题名
+
+## 覆盖范围
+
+## 当前结论
+
+## 关键来源
+
+## 相关概念/实体/对比
+
+## 待验证问题
 ```
 
 ## 比较页模板
@@ -164,16 +200,6 @@ status: active
 - 同名或别名容易产生 unresolved 时，不使用裸 `[[RAG]]`。
 - 外部链接使用标准 Markdown：`[标题](https://example.com)`。
 - 运行 unresolved 检查后，只修复本次变更引入的问题；已有历史问题单独报告。
-
-## URL 入库规则
-
-- 用户给 URL 并要求入库时，agent 应主动获取内容并提炼，不要求用户手动复制正文。
-- 入库前先按完整 URL、canonical URL、标题关键词和核心 slug 搜索已有 `raw/articles/` 与 `wiki/sources/` 页面。
-- 命中同源页面时更新已有 raw/source，并沿用原核心 slug；不要因为标题细微变化创建重复来源。
-- 普通网页优先用 `defuddle` 提取正文；失败时可使用浏览器、官方文档源或用户批准的网络命令。
-- `raw/articles/` 保存来源元数据、获取方式、原文或原始 Markdown 快照和处理状态。
-- `wiki/sources/` 保存结构化总结，`wiki/concepts/` 和 `wiki/areas/` 保存长期知识。
-- 对外回答时不要复述大段第三方原文；需要引用时只给短摘录和来源链接。
 
 ## Lint 检查清单
 
