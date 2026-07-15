@@ -54,7 +54,7 @@ description: Use when maintaining an Obsidian-based personal technical knowledge
 
 ### Ingest 硬闸门
 
-执行 ingest 时必须维护并逐项完成以下清单。最终回复前逐项核对；除明确允许的 `迁移-only` 外，不允许无理由跳过任何闸门。
+执行 ingest 时必须维护并逐项完成以下清单。最终回复前逐项核对，不允许跳过任何闸门。
 
 ```text
 [ ] preflight：已读取 wiki/index.md 和 wiki/log.md
@@ -62,13 +62,13 @@ description: Use when maintaining an Obsidian-based personal technical knowledge
 [ ] dedupe：已按 URL / 标题 / slug 去重
 [ ] raw：已创建、复用或迁移 raw/articles/ 页面
 [ ] source：已创建或更新 wiki/sources/ 页面
-[ ] area：已更新至少一个 wiki/areas/ 页面，或在 log 写明未更新原因和下一步
+[ ] area：已更新至少一个 wiki/areas/ 页面
 [ ] index：已同步 wiki/index.md
 [ ] log：已追加 wiki/log.md 记录
 [ ] postcheck：已确认本轮没有新增 unresolved
 ```
 
-不得以“已经保存总结”“已经移动文件”“用户没特别要求 index/log”为完成标准。只要进入完整 ingest，就必须满足以上闸门；如果用户只要求纯 raw 迁移，按 `Clippings 迁移-only` 规则执行并在日志标记待总结。
+不得以“已经保存总结”“已经移动文件”“用户没特别要求 index/log”为完成标准。任何 ingest 都必须满足以上闸门。
 
 ### Ingest 来源
 
@@ -85,30 +85,23 @@ description: Use when maintaining an Obsidian-based personal technical knowledge
 4. 如果用户提供 URL，主动获取内容；普通网页优先使用 `defuddle parse <url> --md -o <tmp.md>` 提取 clean Markdown 到 agent 指定的临时文件。`defuddle -o` 失败、未生成文件或工具不可用时，停止并说明阻塞原因，不允许退回到让 LLM 输出全文。论文、PDF、GitHub 或官方文档按对应 skill/工具读取，但长原文仍应先落地为文件。
 5. 用 `scripts/raw_ingest.py file --input <tmp.md> --source <url> --vault knowledge-agent` 创建或复用 `raw/articles/` 下的原文记录：标题、作者、链接、访问日期、获取工具、完整原文或完整 Markdown 快照、附件链接、处理状态。raw 创建后视为 source of truth，除补充元数据、处理状态或附件链接外不改写原文。
 6. 创建或更新 `wiki/sources/` 下的结构化总结页。
-7. 执行 Areas 闸门：必须更新至少一个相关 `wiki/areas/` 页面，写入本来源带来的长期结论、关联 source/concept/entity/comparison；如果没有合适 area，创建一个最小 `wiki/areas/` 页面，并同步 `wiki/index.md` 的 Areas 分组。只有纯 raw 迁移且尚未生成 `wiki/sources/` 总结时可以不更新 area，但必须在 `wiki/log.md` 的“决策”或“后续”中写明“未更新 area”的原因和下一步。
+7. 执行 Areas 闸门：必须更新至少一个相关 `wiki/areas/` 页面，写入本来源带来的长期结论、关联 source/concept/entity/comparison；如果没有合适 area，创建一个最小 `wiki/areas/` 页面，并同步 `wiki/index.md` 的 Areas 分组。
 8. 更新相关 `wiki/concepts/`、`wiki/entities/` 和 `wiki/comparisons/` 页面；发现新来源挑战旧结论时，明确标注矛盾、证据和待验证项。
 9. 更新 `wiki/index.md`，为新增或重要更新页面补一行摘要和来源信息。
-10. 向 `wiki/log.md` 追加 `## [YYYY-MM-DD] ingest | 标题` 记录，并在“更新”中列出已更新的 `wiki/areas/...`，或在“决策/后续”中记录“未更新 area”的原因。
+10. 向 `wiki/log.md` 追加 `## [YYYY-MM-DD] ingest | 标题` 记录，并在“更新”中列出已更新的 `wiki/areas/...`。
 11. 再次运行 `obsidian vault="knowledge-agent" unresolved verbose counts format=tsv` 并与基线对比；本轮新增断链必须修复或移除链接后才能结束。
 
 URL ingest 的目标是主动阅读并入库，不要停留在“请用户自己提供内容”。`raw/` 是原始资料层，应保存可获取的完整原文或完整 Markdown 快照；`wiki/` 是知识层，只保存总结、概念、交叉链接和长期结论。保存第三方内容时要记录来源 URL、访问日期和获取方式，回答用户时不要复述大段原文。
 
 如果 `wiki/sources/` 页面的“相关概念”使用 wikilink，该概念页必须已存在或在本轮创建。暂不创建概念页时，使用普通文本或单独写入“待建概念”，不要创建 unresolved 链接。
 
-每次完整 ingest 的成功标准是：raw/source 已创建或更新，Areas 闸门已满足，相关 concept/entity/comparison 已按需同步，index/log 已同步，本轮新增 unresolved 为 0。Areas 闸门已满足是指已更新或创建 `wiki/areas/` 页面；若未更新 area，日志必须明确记录“未更新 area”的原因和下一步。弱成功标准如“已经保存了总结”不算完成。
+每次 ingest 的成功标准是：raw/source 已创建或更新，Areas 闸门已满足，相关 concept/entity/comparison 已按需同步，index/log 已同步，本轮新增 unresolved 为 0。Areas 闸门已满足是指已更新或创建 `wiki/areas/` 页面。弱成功标准如“已经保存了总结”不算完成。
 
 默认优先一次 ingest 一个来源，便于用户检查摘要和强调重点。用户明确要求批处理时，可以批量 ingest，但必须在日志里记录批量范围和未深入处理的风险。
 
 ### Clippings 入库
 
 用户要求处理 Obsidian Web Clipper、`Clippings/`、剪藏、定时任务或自动入库时：
-
-先判断模式：
-
-- `迁移-only`：用户只要求清空、移动、归档或定时迁移剪藏，且没有要求总结、入 wiki 或提炼长期知识。
-- `迁移+总结`：用户要求处理、入库、总结、提炼、同步知识层，或语义上明显希望生成 `wiki/sources/` 和长期知识。
-
-两种模式都必须先执行以下步骤：
 
 1. 执行“开始前检查”，读取 `wiki/index.md`、`wiki/log.md`，并运行 `obsidian vault="knowledge-agent" unresolved verbose counts format=tsv` 建立断链基线。
 2. 用 `obsidian vault="knowledge-agent" files folder="Clippings" ext=md` 获取待处理 Markdown。只处理 `Clippings/` 入口目录下的文件，不处理任何子目录。
@@ -119,17 +112,7 @@ URL ingest 的目标是主动阅读并入库，不要停留在“请用户自己
    ```
 5. 不使用 `scripts/raw_ingest.py` 处理 Clippings，不读取剪藏全文后再由 LLM 输出原文，不重新生成标题，也不重新包装 raw 模板。
 
-`迁移-only` 模式的收尾要求：
-
-1. 更新 `wiki/index.md` 的 Raw Sources 入口；摘要只使用文件名、原始标题或“待总结”，不要编造正文摘要。
-2. 向 `wiki/log.md` 追加 `## [YYYY-MM-DD] ingest | 标题` 记录，并在“后续”写明“待总结”。
-3. 再次运行 unresolved 检查；本轮新增断链必须修复或移除链接后才能处理下一条。
-
-`迁移+总结` 模式的收尾要求：
-
-1. 迁移后再按任务需要读取 `raw/articles/` 中的页面。
-2. 创建或更新 `wiki/sources/` 下的结构化总结页，并按需更新相关 `wiki/concepts/`、`wiki/entities/`、`wiki/comparisons/`。
-3. 执行完整 ingest 硬闸门，尤其是 Areas 闸门、index/log 同步和 unresolved postcheck。
+迁移后必须继续完成本条的完整 ingest：读取 `raw/articles/` 中的页面，创建或更新 `wiki/sources/` 下的结构化总结，按需更新相关 `wiki/concepts/`、`wiki/entities/`、`wiki/comparisons/`，并执行 Areas 闸门、index/log 同步和 unresolved postcheck。定时任务与手动触发使用完全相同的流程，不得将总结或知识层更新留待后续任务。
 
 任一步失败时，遇到失败立即停止本轮批次，不继续后续剪藏；在回复中说明已完成迁移、失败点和下一步。
 
